@@ -6,53 +6,106 @@ const requireLogin = require("../middleware/auth");
 const router = express.Router();
 
 // 🛒 ADD TO CART
-router.post("/add", requireLogin, async (req, res) => {
+
+// router.post("/add", requireLogin, async (req, res) => {
+//   try {
+//     const { productId, size, color, userId } = req.body;
+
+//     if (!userId) {
+//       return res.status(400).json({ message: "User ID missing" });
+//     }
+
+//     const product = await Product.findById(productId);
+//     if (!product)
+//       return res.status(404).json({ message: "Product not found" });
+
+//     let cart = await Cart.findOne({ userId });
+
+//     if (!cart) {
+//       cart = new Cart({
+//         userId,
+//         items: [],
+//       });
+//     }
+
+//     cart.items.push({
+//       productId,
+//       size,
+//       color,
+//       quantity: 1,
+//     });
+
+//     await cart.save();
+
+//     return res.json({
+//       ok: true,
+//       message: "Added to cart",
+//       cart: { items: cart.items },
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// });
+
+
+router.post("/add", async (req, res) => {
   try {
-    const { productId, size } = req.body;
-    const userId = req.user.id;
+    const { productId, size, color, userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID missing" });
+    }
 
     const product = await Product.findById(productId);
-    if (!product)
+    if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
 
     let cart = await Cart.findOne({ userId });
 
-    const itemData = {
-      productId,
-      title: product.title,
-      brand: product.brand,
-      price: product.price,
-      discountedPrice: product.discountedPrice,
-      discountPercent: product.discountPercent,
-      size,
-      returnPeriod: product.returnPeriod || "3 days",
-      image: product.images?.[0] || "",
-      quantity: 1,
-    };
-
+    // Create a new cart if user has none
     if (!cart) {
-      // If user doesn’t have a cart, create a new one
-      cart = new Cart({ userId, items: [itemData] });
-    } else {
-      // If user already has a cart
-      const existingItem = cart.items.find(
-        (item) =>
-          item.productId.toString() === productId && item.size === size
-      );
+      cart = new Cart({
+        userId,
+        items: [],
+      });
+    }
 
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.items.push(itemData);
-      }
+    // Check if item already exists (same product, size, color)
+    const existingItem = cart.items.find(
+      (item) =>
+        item.productId.toString() === productId &&
+        item.size === size &&
+        item.color === color
+    );
+
+    if (existingItem) {
+      // Increase quantity if exists
+      existingItem.quantity += 1;
+    } else {
+      // Add new item if it doesn't exist
+      cart.items.push({
+        productId,
+        size,
+        color,
+        quantity: 1,
+      });
     }
 
     await cart.save();
-    res.json({ message: "Added to cart", cart });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+
+    return res.json({
+      ok: true,
+      message: "Added to cart",
+      cart: { items: cart.items },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 // 🧺 GET USER CART
 router.get("/", requireLogin, async (req, res) => {
@@ -61,7 +114,11 @@ router.get("/", requireLogin, async (req, res) => {
     const cart = await Cart.findOne({ userId });
     res.json(cart || { items: [] });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+    ok: false,
+    message: error.message,
+    stack: error.stack,
+  });
   }
 });
 

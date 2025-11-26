@@ -20,6 +20,7 @@ const cartSchema = new mongoose.Schema(
         discountedPrice: Number,
         discountPercent: Number,
         size: String,
+        color: { type: String },
         quantity: {
           type: Number,
           default: 1,
