@@ -96,7 +96,7 @@ exports.getWishlist = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).populate({
       path: "wishlist",
-      select: "title price brand images discount mrp discountPercent" // <-- use 'title' and 'images'
+      select: "title price brand images slug discount mrp discountPercent" // <-- use 'title' and 'images'
     });
 
     if (!user) {
