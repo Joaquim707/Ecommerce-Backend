@@ -6,8 +6,60 @@ const requireLogin = require("../middleware/auth");
 const router = express.Router();
 
 // 🛒 ADD TO CART
-
 // router.post("/add", requireLogin, async (req, res) => {
+//   try {
+//     const { productId, size, color } = req.body;
+//     const userId = req.user.id;
+
+//     const product = await Product.findById(productId);
+//     if (!product)
+//       return res.status(404).json({ message: "Product not found" });
+
+//     let cart = await Cart.findOne({ userId });
+
+//     const itemData = {
+//       productId,
+//       title: product.title,
+//       brand: product.brand,
+//       price: product.price,
+//       discountedPrice: product.discountedPrice,
+//       discountPercent: product.discountPercent,
+//       size,
+//       color: color || null,
+//       returnPeriod: product.returnPeriod || "3 days",
+//       image: product.images?.[0] || "",
+//       quantity: 1,
+//     };
+
+//     if (!cart) {
+//       // If user doesn’t have a cart, create a new one
+//       cart = new Cart({ userId, items: [itemData] });
+//     } else {
+//       // If user already has a cart
+//       const existingItem = cart.items.find(
+//         (item) =>
+//           item.productId.toString() === productId && item.size === size && item.color === itemData.color
+//       );
+
+//       if (existingItem) {
+//         existingItem.quantity += 1;
+//       } else {
+//         cart.items.push(itemData);
+//       }
+//     }
+
+//     await cart.save();
+//     res.json({
+//     ok: true,
+//     message: "Added to cart",
+//     cart: { items: cart.items },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// router.post("/add", async (req, res) => {
 //   try {
 //     const { productId, size, color, userId } = req.body;
 
@@ -48,6 +100,21 @@ const router = express.Router();
 //   }
 // });
 
+
+// // 🧺 GET USER CART
+// router.get("/", async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const cart = await Cart.findOne({ userId });
+//     res.json(cart || { items: [] });
+//   } catch (error) {
+//     res.status(500).json({
+//     ok: false,
+//     message: error.message,
+//     stack: error.stack,
+//   });
+//   }
+// });
 
 router.post("/add", async (req, res) => {
   try {
@@ -106,21 +173,6 @@ router.post("/add", async (req, res) => {
   }
 });
 
-
-// 🧺 GET USER CART
-router.get("/", requireLogin, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const cart = await Cart.findOne({ userId });
-    res.json(cart || { items: [] });
-  } catch (error) {
-    res.status(500).json({
-    ok: false,
-    message: error.message,
-    stack: error.stack,
-  });
-  }
-});
 
 // 🔄 UPDATE QUANTITY
 router.put("/update", requireLogin, async (req, res) => {
