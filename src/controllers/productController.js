@@ -310,16 +310,26 @@ exports.getFilteredProducts = async (req, res) => {
     }
 
     // ✅ Search Filter
+    // ✅ Advanced Search Filter (multi-keyword, fuzzy, partial match)
     if (search) {
-      const searchRegex = { $regex: search, $options: "i" };
-      filter.$or = [
-        { title: searchRegex },
-        { brand: searchRegex },
-        { categoryPath: searchRegex },
-        { colorOptions: searchRegex },
-        { sizeOptions: searchRegex }
-      ];
+      const keywords = search
+        .trim()
+        .split(" ")
+        .map((w) => new RegExp(w, "i"));
+
+      filter.$and = keywords.map((regex) => ({
+        $or: [
+          { title: regex },
+          { description: regex },
+          { brand: regex },
+          { categoryPath: regex },
+          { colorOptions: { $in: [regex] } },
+          { sizeOptions: { $in: [regex] } },
+          { tags: { $in: [regex] } },
+        ],
+      }));
     }
+
 
     // ✅ Pagination
     const skip = (page - 1) * limit;
