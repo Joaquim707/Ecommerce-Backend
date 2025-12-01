@@ -8,18 +8,18 @@ exports.addToWishlist = async (req, res) => {
 
     // Validate productId
     if (!productId) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: "Product ID is required" 
+      return res.status(400).json({
+        ok: false,
+        message: "Product ID is required"
       });
     }
 
     // Check if product exists
     const productExists = await Product.findById(productId);
     if (!productExists) {
-      return res.status(404).json({ 
-        ok: false, 
-        message: "Product not found" 
+      return res.status(404).json({
+        ok: false,
+        message: "Product not found"
       });
     }
 
@@ -27,25 +27,25 @@ exports.addToWishlist = async (req, res) => {
 
     // Check if already in wishlist
     if (user.wishlist.includes(productId)) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: "Product already in wishlist" 
+      return res.status(400).json({
+        ok: false,
+        message: "Product already in wishlist"
       });
     }
 
     user.wishlist.push(productId);
     await user.save();
 
-    res.status(200).json({ 
-      ok: true, 
+    res.status(200).json({
+      ok: true,
       message: "Product added to wishlist",
-      wishlist: user.wishlist 
+      wishlist: user.wishlist
     });
   } catch (err) {
     console.error("Add to wishlist error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "Server error" 
+    res.status(500).json({
+      ok: false,
+      message: "Server error"
     });
   }
 };
@@ -56,9 +56,9 @@ exports.removeFromWishlist = async (req, res) => {
     const { productId } = req.body;
 
     if (!productId) {
-      return res.status(400).json({ 
-        ok: false, 
-        message: "Product ID is required" 
+      return res.status(400).json({
+        ok: false,
+        message: "Product ID is required"
       });
     }
 
@@ -66,9 +66,9 @@ exports.removeFromWishlist = async (req, res) => {
 
     // Check if product is in wishlist
     if (!user.wishlist.includes(productId)) {
-      return res.status(404).json({ 
-        ok: false, 
-        message: "Product not in wishlist" 
+      return res.status(404).json({
+        ok: false,
+        message: "Product not in wishlist"
       });
     }
 
@@ -77,16 +77,16 @@ exports.removeFromWishlist = async (req, res) => {
     );
     await user.save();
 
-    res.status(200).json({ 
-      ok: true, 
+    res.status(200).json({
+      ok: true,
       message: "Product removed from wishlist",
-      wishlist: user.wishlist 
+      wishlist: user.wishlist
     });
   } catch (err) {
     console.error("Remove from wishlist error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "Server error" 
+    res.status(500).json({
+      ok: false,
+      message: "Server error"
     });
   }
 };
@@ -101,22 +101,22 @@ exports.getWishlist = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ 
-        ok: false, 
-        message: "User not found" 
+      return res.status(404).json({
+        ok: false,
+        message: "User not found"
       });
     }
 
-    res.status(200).json({ 
-      ok: true, 
+    res.status(200).json({
+      ok: true,
       count: user.wishlist.length,
-      wishlist: user.wishlist 
+      wishlist: user.wishlist
     });
   } catch (err) {
     console.error("Get wishlist error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "Server error" 
+    res.status(500).json({
+      ok: false,
+      message: "Server error"
     });
   }
 };
@@ -130,15 +130,15 @@ exports.checkWishlist = async (req, res) => {
     const user = await User.findById(req.user.userId);
     const isInWishlist = user.wishlist.includes(productId);
 
-    res.status(200).json({ 
-      ok: true, 
-      isInWishlist 
+    res.status(200).json({
+      ok: true,
+      isInWishlist
     });
   } catch (err) {
     console.error("Check wishlist error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "Server error" 
+    res.status(500).json({
+      ok: false,
+      message: "Server error"
     });
   }
 };
@@ -150,15 +150,15 @@ exports.clearWishlist = async (req, res) => {
     user.wishlist = [];
     await user.save();
 
-    res.status(200).json({ 
-      ok: true, 
-      message: "Wishlist cleared" 
+    res.status(200).json({
+      ok: true,
+      message: "Wishlist cleared"
     });
   } catch (err) {
     console.error("Clear wishlist error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "Server error" 
+    res.status(500).json({
+      ok: false,
+      message: "Server error"
     });
   }
 };

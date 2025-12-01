@@ -1,4 +1,6 @@
 // models/Order.js
+
+const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
