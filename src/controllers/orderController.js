@@ -211,7 +211,6 @@ exports.createOrder = async (req, res) => {
     // GET USER CART
     //--------------------------
     const userId = req.user.userId || req.user.id; // from your log, userId is set
-    console.log("🆔 USER ID USED FOR CART:", userId);
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
     console.log("📌 USER CART:", cart);
@@ -379,7 +378,7 @@ exports.getMyOrders = async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
 
-    const query = { userId: req.user.id };
+    const query = { userId: req.user.userId };
 
     // Filter by status if provided
     if (status) {
@@ -416,12 +415,45 @@ exports.getMyOrders = async (req, res) => {
 };
 
 // Get single order by ID
+// exports.getOrderById = async (req, res) => {
+//   try {
+//     const order = await Order.findOne({
+//       _id: req.params.orderId,
+//       userId: req.user.userId
+//     }).populate('items.productId');
+
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Order not found'
+//       });
+//     }
+
+//     res.json({
+//       success: true,
+//       order
+//     });
+//   } catch (error) {
+//     console.error('Get order error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Failed to fetch order',
+//       error: error.message
+//     });
+//   }
+// };
+
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findOne({
       _id: req.params.orderId,
-      userId: req.user.id
-    }).populate('items.productId');
+      userId: req.user.userId
+    }).populate({
+      path: 'items.productId',       // populate the product details for each item
+      select: '-__v',                // optional: exclude __v if not needed
+      // If you want to populate nested fields, you can do it here
+      // e.g., populate category: { path: 'categoryId' }
+    });
 
     if (!order) {
       return res.status(404).json({
@@ -443,6 +475,7 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
+
 
 // Update order status (Admin only)
 exports.updateOrderStatus = async (req, res) => {
@@ -522,7 +555,7 @@ exports.cancelOrder = async (req, res) => {
 
     const order = await Order.findOne({
       _id: req.params.orderId,
-      userId: req.user.id
+      userId: req.user.userId
     });
 
     if (!order) {
@@ -591,7 +624,7 @@ exports.returnOrder = async (req, res) => {
 
     const order = await Order.findOne({
       _id: req.params.orderId,
-      userId: req.user.id
+      userId: req.user.userId
     });
 
     if (!order) {
@@ -670,7 +703,7 @@ exports.returnOrder = async (req, res) => {
 // Get order statistics (for user dashboard)
 exports.getOrderStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     const stats = await Order.aggregate([
       { $match: { userId: mongoose.Types.ObjectId(userId) } },
