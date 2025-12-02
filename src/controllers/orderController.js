@@ -168,7 +168,7 @@ exports.createOrder = async (req, res) => {
       paymentMethod,
       couponCode,
       donation,
-      selectedItems // Array of itemId strings
+      items // Changed from selectedItems to items - this is the array of order items from frontend
     } = req.body;
 
     // -------------------------
@@ -208,38 +208,21 @@ exports.createOrder = async (req, res) => {
     }
 
     // -------------------------
-    // GET USER CART
+    // VALIDATE ITEMS
     //--------------------------
-    const userId = req.user.userId || req.user.id; // from your log, userId is set
-
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
-    console.log("📌 USER CART:", cart);
-
-    if (!cart || !cart.items || cart.items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Cart is empty"
-      });
-    }
-
-    // -------------------------
-    // FILTER SELECTED ITEMS
-    //--------------------------
-    let orderItems = cart.items;
-
-    if (Array.isArray(selectedItems) && selectedItems.length > 0) {
-      orderItems = cart.items.filter(item => {
-        const key = `${item.productId._id}-${item.size}-${item.color}`;
-        return selectedItems.includes(key);
-      });
-    }
-
-    if (orderItems.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: "No items selected for order"
       });
     }
+
+    
+
+    // -------------------------
+    // GET USER ID
+    //--------------------------
+    const userId = req.user.userId || req.user.id;
 
     // -------------------------
     // CALCULATE PRICES
@@ -247,31 +230,28 @@ exports.createOrder = async (req, res) => {
     let totalMRP = 0;
     let totalAmount = 0;
 
-    const items = orderItems.map(item => {
-      const product = item.productId;
-      const itemMRP = (product.mrp || product.price) * item.quantity;
-      const itemPrice = product.price * item.quantity;
+    const orderItems = items.map(item => {
+      const itemMRP = (item.mrp || item.price) * item.quantity;
+      const itemPrice = item.price * item.quantity;
       const itemDiscount = itemMRP - itemPrice;
 
       totalMRP += itemMRP;
       totalAmount += itemPrice;
 
       return {
-        productId: product._id,
-        // make sure this matches your Product schema (name / title)
-        name: product.name || product.title, 
-        brand: product.brand,
-        image: product.images?.[0],
+        productId: item.productId,
+        name: item.name,
+        brand: item.brand,
+        image: item.image,
         size: item.size,
         color: item.color,
         quantity: item.quantity,
-        price: product.price,
-        mrp: product.mrp || product.price,
+        price: item.price,
+        mrp: item.mrp || item.price,
         discount: itemDiscount
       };
     });
-
-    console.log("🧾 ORDER ITEMS BEFORE SAVE:", items);
+    
 
     const totalDiscount = totalMRP - totalAmount;
     let couponDiscount = 0;
@@ -297,10 +277,10 @@ exports.createOrder = async (req, res) => {
     // CREATE ORDER
     //--------------------------
     const order = new Order({
-      userId,               // ✅ correct user id
-      orderNumber,          // ✅ required in schema
+      userId,
+      orderNumber,
       shippingAddress,
-      items,
+      items: orderItems,
       pricing: {
         totalMRP,
         totalDiscount,
@@ -337,16 +317,19 @@ exports.createOrder = async (req, res) => {
     // -------------------------
     // REMOVE ORDERED ITEMS FROM CART
     //--------------------------
-    if (selectedItems && selectedItems.length > 0) {
-      cart.items = cart.items.filter(item => {
-        const key = `${item.productId._id}-${item.size}-${item.color}`;
-        return !selectedItems.includes(key);
-      });
-    } else {
-      cart.items = []; // clear all
+    const cart = await Cart.findOne({ userId });
+    
+    if (cart && cart.items && cart.items.length > 0) {
+      // Remove only the items that were ordered
+      for (const orderedItem of items) {
+        cart.items = cart.items.filter(cartItem => {
+          const cartItemKey = `${cartItem.productId}-${cartItem.size}-${cartItem.color}`;
+          const orderedItemKey = `${orderedItem.productId}-${orderedItem.size}-${orderedItem.color}`;
+          return cartItemKey !== orderedItemKey;
+        });
+      }
+      await cart.save();
     }
-
-    await cart.save();
 
     // -------------------------
     // POPULATE ORDER BEFORE RETURNING
@@ -362,7 +345,7 @@ exports.createOrder = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Create order error:", error);
+    console.error("❌ Create order error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to place order",
