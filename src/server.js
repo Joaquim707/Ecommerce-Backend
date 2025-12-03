@@ -9,6 +9,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const wishlistRoutes = require('./routes/wishlist');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 app.use(
@@ -31,7 +32,7 @@ app.use('/api/wishlist', wishlistRoutes);
 
 app.use("/api/cart", cartRoutes);
 
-app.use("/api/user", userRoutes);
+app.use('/api/orders', orderRoutes);
 
 
 app.use("/uploads", express.static("uploads"));
